@@ -130,14 +130,43 @@ int test_add_beat_to_track(void){
 
 // Test function for `remove_selected_beat`
 int test_remove_selected_beat(void){
-    // Test 1: ???
-    // TODO: Write Test 1
+    // Test 1: Does not remove beat if none is playing
+    Track test_track = create_track();
+    
+    Beat test_beat_1 = create_beat();
+    add_note_to_beat(test_beat_1, 0, 11);
+    add_beat_to_track(test_track, test_beat_1);
 
-    // Test 2: ???
-    // TODO: Write Test 2
+    remove_selected_beat(test_track);
 
-    // Test 3: ???
-    // TODO: Write Test 3
+    if (count_beats_left_in_track(test_track) != 1) {
+        return DOES_NOT_MEET_SPEC;
+    }
+
+    // Test 2: Removes first and last beats
+    Beat test_beat_3 = create_beat();
+    add_note_to_beat(test_beat_3, 2, 11);
+    add_beat_to_track(test_track, test_beat_3);
+
+    Beat test_beat_after_first = create_beat();
+    add_note_to_beat(test_beat_after_first, 4, 11);
+    add_beat_to_track(test_track, test_beat_after_first);
+
+    select_next_beat(test_track);
+
+    remove_selected_beat(test_track);
+
+    if (count_beats_left_in_track(test_track) != 1) {
+        return DOES_NOT_MEET_SPEC;
+    }
+
+    select_next_beat(test_track);
+
+    remove_selected_beat(test_track);
+
+    if (count_beats_left_in_track(test_track) != 1) {
+        return DOES_NOT_MEET_SPEC;
+    }
 
     return MEETS_SPEC;
 }

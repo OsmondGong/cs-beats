@@ -238,26 +238,61 @@ int count_beats_left_in_track(Track track) {
 
 // Free the memory of a beat, and any memory it points to.
 void free_beat(Beat beat) {
-    // Note: there is no printf in this function, as the
-    // Stage 1 & 2 autotests call free_beat but don't check whether
-    // the memory has been freed (so this function should do nothing in
-    // Stage 1 & 2, rather than exit).
+    if (beat == NULL) {
+        return;
+    }
+    struct note *temp;
+    while (beat->notes != NULL) {
+        temp = beat->notes->next;
+        free(beat->notes);
+        beat->notes = temp;
+    }
+    free(beat);
     return;
 }
 
 // Free the memory of a track, and any memory it points to.
 void free_track(Track track) {
-    // Note: there is no printf in this function, as the
-    // Stage 1 & 2 autotests call free_track but don't check whether
-    // the memory has been freed (so this function should do nothing in
-    // Stage 1 & 2, rather than print an error).
+    if (track == NULL) {
+        return;
+    }
+    Beat temp;
+    while (track->head != NULL) {
+        temp = track->head->next;
+        free_beat(track->head);
+        track->head = temp;
+    }
+    free(track);
     return;
 }
 
 // Remove the currently selected beat from a track.
 int remove_selected_beat(Track track) {
-    printf("remove_selected_beat not implemented yet.");
-    return TRACK_STOPPED;
+    if (track->curr == NULL) {
+        return TRACK_STOPPED;
+    }
+    if (track->head == track->curr) {
+        Beat temp2 = track->curr;
+        track->head = track->curr->next;
+        track->curr = track->head;
+        free_beat(temp2);
+        if (track->curr == NULL) {
+            return TRACK_STOPPED;
+        }
+        return TRACK_PLAYING;
+    }
+    Beat temp = track->head;
+    while (temp->next != track->curr) {
+        temp = temp->next;
+    }
+    Beat temp2 = track->curr;
+    temp->next = track->curr->next;
+    track->curr = temp->next;
+    free_beat(temp2);
+    if (track->curr == NULL) {
+        return TRACK_STOPPED;
+    }
+    return TRACK_PLAYING;
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -266,7 +301,95 @@ int remove_selected_beat(Track track) {
 
 // Add note to beat, given its 'musical notation'.
 int add_musical_note_to_beat(Beat beat, char *musical_notation) {
-    printf("add_musical_note_to_beat not implemented yet.");
+    if (musical_notation[0] < '0' || musical_notation[0] > '9') {
+        return INVALID_MUSICAL_NOTE;
+    }
+    if (musical_notation[1] < 'A' || musical_notation[1] > 'G') {
+        return INVALID_MUSICAL_NOTE;
+    }
+    int j = 2;
+    while (musical_notation[j] != '\0') {
+        if (musical_notation[j] != '#') {
+            return INVALID_MUSICAL_NOTE;
+        }
+        j++;
+    }
+    int octave = musical_notation[0] - '0';
+    int key;
+    if (musical_notation[1] == 'A') {
+        key = 0;
+    }
+    else if (musical_notation[1] == 'B') {
+        key = 2;
+    }
+    else if (musical_notation[1] == 'C') {
+        key = 3;
+    }
+    else if (musical_notation[1] == 'D') {
+        key = 5;
+    }
+    else if (musical_notation[1] == 'E') {
+        key = 7;
+    }
+    else if (musical_notation[1] == 'F') {
+        key = 8;
+    }
+    else if (musical_notation[1] == 'G') {
+        key = 10;
+    }
+    int i = 2;
+    while (musical_notation[i] != '\0') {
+        i++;
+    }
+    key = key + i - 2;
+    while (key > 11) {
+        key -= 12;
+        octave++;
+    }
+    if (beat->notes == NULL) {
+        add_note_to_beat(beat, octave, key);
+        return VALID_NOTE;
+    }
+    struct note *temp = malloc(sizeof(struct note));
+    temp->octave = octave;
+    temp->key = key;
+    if (beat->notes->octave > octave) {
+        temp->next = beat->notes;
+        beat->notes = temp;
+        return VALID_NOTE;
+    }
+    if (beat->notes->octave == octave && beat->notes->key > key) {
+        temp->next = beat->notes;
+        beat->notes = temp;
+        return VALID_NOTE;
+    }
+    if (beat->notes->octave == octave && beat->notes->key == key) {
+        free(temp);
+        return INVALID_MUSICAL_NOTE;
+    }
+    if (beat->notes->next == NULL) {
+        temp->next = beat->notes->next;
+        beat->notes->next = temp;
+        return VALID_NOTE;
+    }
+    struct note *curr = beat->notes;
+    while (curr->next->octave < octave) {
+        curr = curr->next;
+        if (curr->next == NULL) {
+            break;
+        }
+    }
+    if (curr->next != NULL) {
+        while (curr->next->octave == octave && curr->next->key < key) {
+            curr = curr->next;
+        }
+        if (curr->next->octave == octave && curr->next->key == key) {
+            free(temp);
+            return INVALID_MUSICAL_NOTE;
+        }
+    }
+    temp->next = curr->next;
+    curr->next = temp;
     return VALID_NOTE;
 }
 
@@ -277,12 +400,85 @@ int add_musical_note_to_beat(Beat beat, char *musical_notation) {
 
 // Cut a range of beats to the end of a track.
 void cut_range_to_end(Track track, int range_length) {
-    printf("cut_range_to_end not implemented yet.");
+    if (range_length < 1) {
+        return;
+    }
+    if (track->curr == NULL) {
+        return;
+    }
+    if (count_beats_left_in_track(track) < range_length) {
+        return;
+    }
+    Beat last = track->head;
+    while (last->next != NULL) {
+        last = last->next;
+    }
+    last->next = track->curr;
+    Beat temp = track->head;
+    while (temp->next != track->curr) {
+        temp = temp->next;
+    }
+    Beat temp_curr = track->curr;
+    int i = 1;
+    while (i < range_length) {
+        temp_curr = temp_curr->next;
+        i++;
+    }
+    if (track->head == track->curr) {
+        track->head = temp_curr->next;
+    }
+    else {
+        temp->next = temp_curr->next;
+    }
+    temp_curr->next = NULL;
     return;
 }
 
 // Reverse a list of beats within a range of a track.
 int reverse_range(Track track, int range_length) {
-    printf("reverse_range not implemented yet.");
-    return 0;
+    if (count_beats_left_in_track(track) < range_length) {
+        range_length = count_beats_left_in_track(track) + 1;
+    }
+    if (range_length < 2) {
+        return 0;
+    }
+    if (track->curr == NULL) {
+        return 0;
+    }
+    int ret_range = range_length;
+    Beat temp = track->head;
+    while (temp != track->curr && temp->next != track->curr) {
+        temp = temp->next;
+    }
+    Beat after = track->curr;
+    int i = 1;
+    while (i < range_length) {
+        after = after->next;
+        i++;
+    }
+    if (track->head == track->curr) {
+        track->head = after;
+    }
+    else {
+        temp->next = after;
+    }
+    after = after->next;
+    while (range_length > 0) {
+        Beat from = track->curr;
+        Beat to = track->curr;
+        i = 1;
+        while (i < range_length) {
+            from = from->next;
+            i++;
+        }
+        i = 1;
+        while (i < range_length - 1) {
+            to = to->next;
+            i++;
+        }
+        from->next = to;
+        range_length--;
+    }
+    track->curr->next = after;
+    return ret_range - 1;
 }
