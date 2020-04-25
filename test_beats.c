@@ -1,8 +1,8 @@
 // Assignment 2 20T1 COMP1511: CS bEats
 // test_beats.c
 //
-// This program was written by YOUR-NAME-HERE (z5555555)
-// on INSERT-DATE-HERE
+// This program was written by Osmond Gong (z5293467)
+// on 26/04/2020
 //
 // Version 1.0.0: Assignment released.
 #include <stdio.h>
@@ -85,12 +85,11 @@ int test_count_notes_in_octave(void){
 int test_add_beat_to_track(void){
     // Test 1: Adding beat to track
     Track test_track = create_track();
-    
     Beat test_beat_1 = create_beat();
     add_note_to_beat(test_beat_1, 0, 11);
     add_beat_to_track(test_track, test_beat_1);
-
-    if (count_beats_left_in_track(test_track) == 1) {
+    
+    if (count_beats_left_in_track(test_track) != 1) {
         return DOES_NOT_MEET_SPEC;
     }
     // Test 2: Checks current beat is unaffected after function
@@ -100,7 +99,7 @@ int test_add_beat_to_track(void){
     add_note_to_beat(test_beat_2, 1, 11);
     add_beat_to_track(test_track, test_beat_2);
 
-    if (count_beats_left_in_track(test_track) == 1) {
+    if (count_beats_left_in_track(test_track) != 1) {
         return DOES_NOT_MEET_SPEC;
     }
 
@@ -124,7 +123,6 @@ int test_add_beat_to_track(void){
     if (count_beats_left_in_track(test_track) != 0) {
         return DOES_NOT_MEET_SPEC;
     }
-
     return MEETS_SPEC;
 }
 
@@ -173,14 +171,32 @@ int test_remove_selected_beat(void){
 
 // Test function for `add_musical_note_to_beat`
 int test_add_musical_note_to_beat(void){
-    // Test 1: ???
-    // TODO: Write Test 1
-
-    // Test 2: ???
-    // TODO: Write Test 2
-
-    // Test 3: ???
-    // TODO: Write Test 3
-
+    // Test 1: Valid notes
+    Beat test_beat = create_beat();
+    char test1[10] = "1A";
+    char test2[50] = "1A#############################";
+    char test3[10] = "9G#";
+    if (add_musical_note_to_beat(test_beat, test1) != VALID_NOTE) {
+        return DOES_NOT_MEET_SPEC;
+    }
+    if (add_musical_note_to_beat(test_beat, test2) != VALID_NOTE) {
+        return DOES_NOT_MEET_SPEC;
+    }
+    if (add_musical_note_to_beat(test_beat, test3) != VALID_NOTE) {
+        return DOES_NOT_MEET_SPEC;
+    }
+    // Test 2: Invalid notes
+    char test4[10] = "9G######";
+    char test5[10] = "-1a";
+    char test6[10] = "abc";
+    if (add_musical_note_to_beat(test_beat, test4) != INVALID_MUSICAL_NOTE) {
+        return DOES_NOT_MEET_SPEC;
+    }
+    if (add_musical_note_to_beat(test_beat, test5) != INVALID_MUSICAL_NOTE) {
+        return DOES_NOT_MEET_SPEC;
+    }
+    if (add_musical_note_to_beat(test_beat, test6) != INVALID_MUSICAL_NOTE) {
+        return DOES_NOT_MEET_SPEC;
+    }
     return MEETS_SPEC;
 }
